@@ -1,0 +1,40 @@
+version: '3'
+
+# To make the data persistent
+volumes:
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+services:
+  prometheus-exporter:
+    build: .
+    container_name: prometheus_exporter
+    hostname: exporter
+    volumes:
+      - ./Exporter:/exporter
+      - prometheus-data:/prometheus
+    # In production, this should be hosted on a normal web server, such as WSGI
+    command:
+      - /bin/sh
+      - -c
+      - python3 /exporter/main.py
+  prometheus-server:
+    image: prom/prometheus
+    container_name: prometheus_server
+    hostname: prometheus
+    ports:
+      - 80:9090
+    volumes:
+      - type: bind
+        source: ./Server/prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    volumes:
+      - ./Grafana/DataSources:/etc/grafana/provisioning/datasources
+      - grafana-data:/var/lib/grafana
